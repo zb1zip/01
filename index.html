@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>방명록 HTTPS 테스트</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .container { display: flex; flex-wrap: wrap; }
+    .note { background: #fff8a6; padding: 15px; margin: 10px; width: 200px; box-shadow: 2px 2px 5px gray; word-break: break-word; }
+    @media (max-width: 600px) { .note { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<h1>📌 방명록 HTTPS 테스트</h1>
+
+<input id="name" placeholder="이름">
+<textarea id="message" placeholder="내용"></textarea>
+<input id="password" type="password" placeholder="비밀번호">
+<button id="addBtn">작성</button>
+<hr>
+
+<div class="container" id="notes"></div>
+
+<!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore.js"></script>
+
+<script>
+  // 🔥 Firebase 프로젝트 설정 (본인 Firebase 프로젝트 값으로 변경)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs",
+    authDomain: "memory-guest.firebaseapp.com",
+    projectId: "memory-guest"
+  };
+
+  // Firebase 초기화
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 글 작성
+  function addNote() {
+    const name = document.getElementById("name").value.trim();
+    const message = document.getElementById("message").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!name || !message || !password) {
+      alert("이름, 내용, 비밀번호 모두 입력하세요!");
+      return;
+    }
+
+    db.collection("notes").add({
+      name,
+      message,
+      password,
+      createdAt: new Date()
+    })
+    .then(() => {
+      alert("작성 완료!");
+      document.getElementById("name").value = "";
+      document.getElementById("message").value = "";
+      document.getElementById("password").value = "";
+    })
+    .catch(error => {
+      console.error(error);
+      alert("작성 중 오류 발생!");
+    });
+  }
+
+  // 글 불러오기
+  function loadNotes() {
+    db.collection("notes")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(snapshot => {
+        const container = document.getElementById("notes");
+        container.innerHTML = "";
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          div.className = "note";
+          div.innerHTML = `
+            <h3>${data.name}</h3>
+            <p>${data.message}</p>
+            <button onclick="deleteNote('${doc.id}')">삭제</button>
+          `;
+          container.appendChild(div);
+        });
+      });
+  }
+
+  // 글 삭제 (비밀번호 확인)
+  function deleteNote(id) {
+    const input = prompt("비밀번호 입력");
+    if (!input) return;
+
+    db.collection("notes").doc(id).get().then(doc => {
+      if (doc.exists && doc.data().password === input) {
+        db.collection("notes").doc(id).delete();
+      } else {
+        alert("비밀번호 틀림!");
+      }
+    });
+  }
+
+  // 버튼 이벤트 연결
+  document.getElementById("addBtn").addEventListener("click", addNote);
+
+  // 초기 글 로드
+  loadNotes();
+</script>
+
+</body>
+</html>
