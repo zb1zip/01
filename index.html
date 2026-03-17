@@ -24,24 +24,24 @@
 
 <div class="container" id="notes"></div>
 
-<!-- Firebase JS SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-app.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.16.0/firebase-firestore.js" defer></script>
+<!-- Firebase JS SDK 9 compat 버전 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-<script defer>
+<script>
 document.addEventListener("DOMContentLoaded", function() {
-  //
+  // 
   const firebaseConfig = {
     apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs",
     authDomain: "memory-guest.firebaseapp.com",
     projectId: "memory-guest"
   };
 
-  //
+  // Firebase 초기화
   const app = firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  //
+  // 글 작성
   function addNote() {
     const name = document.getElementById("name").value.trim();
     const message = document.getElementById("message").value.trim();
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  //
+  // 글 불러오기
   function loadNotes() {
     db.collection("notes")
       .orderBy("createdAt", "desc")
@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  //
+  // 글 삭제 (비밀번호 확인)
   window.deleteNote = function(id) {
     const input = prompt("비밀번호 입력");
     if (!input) return;
@@ -106,10 +106,10 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  //
+  // 버튼 이벤트 연결
   document.getElementById("addBtn").addEventListener("click", addNote);
 
-  //
+  // 초기 글 로드
   loadNotes();
 });
 </script>
