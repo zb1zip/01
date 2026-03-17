@@ -24,13 +24,13 @@
 
 <div class="container" id="notes"></div>
 
-<!-- Firebase JS SDK 9 compat 버전 -->
+<!-- Firebase JS SDK 9 compat 버전 (defer 제거) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // 
+  // 🔥 Firebase 프로젝트 설정 (본인 프로젝트 값으로 변경)
   const firebaseConfig = {
     apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs",
     authDomain: "memory-guest.firebaseapp.com",
