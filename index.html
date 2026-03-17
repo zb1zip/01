@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>방명록 관리자 삭제 테스트</title>
+  <title>zb1.zip</title>
   <style>
     body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
     input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<h1>📌 방명록 관리자 테스트</h1>
+<h1>📌</h1>
 
 <input id="name" placeholder="이름">
 <textarea id="message" placeholder="내용"></textarea>
@@ -31,7 +31,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const firebaseConfig = {
-    apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs",
+    apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs", // 본인 Firebase 프로젝트 값
     authDomain: "memory-guest.firebaseapp.com",
     projectId: "memory-guest"
   };
@@ -39,11 +39,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const app = firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const adminPassword = "admin0710"; // 🔥 관리자 비밀번호 설정
-
+  const adminPassword = "admin0710"; // 관리자 비밀번호
   let editId = null;
 
-  // 작성 / 수정
   function addOrEditNote() {
     const name = document.getElementById("name").value.trim();
     const message = document.getElementById("message").value.trim();
@@ -57,9 +55,7 @@ document.addEventListener("DOMContentLoaded", function() {
           db.collection("notes").doc(editId).update({ name, message })
             .then(() => { alert("수정 완료!"); resetForm(); })
             .catch(error => console.error(error));
-        } else {
-          alert("비밀번호 틀림!");
-        }
+        } else { alert("비밀번호 틀림!"); }
       });
     } else {
       db.collection("notes").add({ name, message, password, createdAt: new Date() })
@@ -76,12 +72,10 @@ document.addEventListener("DOMContentLoaded", function() {
     editId = null;
   }
 
-  // 글 불러오기
   function loadNotes() {
     db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snapshot => {
       const container = document.getElementById("notes");
       container.innerHTML = "";
-
       snapshot.forEach(doc => {
         const data = doc.data();
         const div = document.createElement("div");
@@ -97,25 +91,19 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // 삭제
   window.deleteNote = function(id) {
     const input = prompt("비밀번호 입력 (관리자 가능)");
     if (!input) return;
-
     db.collection("notes").doc(id).get().then(doc => {
       if (doc.exists && (doc.data().password === input || input === adminPassword)) {
         db.collection("notes").doc(id).delete();
-      } else {
-        alert("비밀번호 틀림!");
-      }
+      } else { alert("비밀번호 틀림!"); }
     });
   }
 
-  // 수정
   window.editNote = function(id) {
     const input = prompt("비밀번호 입력 (관리자 가능)");
     if (!input) return;
-
     db.collection("notes").doc(id).get().then(doc => {
       if (doc.exists && (doc.data().password === input || input === adminPassword)) {
         document.getElementById("name").value = doc.data().name;
@@ -123,9 +111,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("password").value = input;
         document.getElementById("addBtn").textContent = "수정 완료";
         editId = id;
-      } else {
-        alert("비밀번호 틀림!");
-      }
+      } else { alert("비밀번호 틀림!"); }
     });
   }
 
