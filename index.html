@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>방명록 HTTPS 테스트</title>
+  <title>방명록 관리자 삭제 테스트</title>
   <style>
     body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
     input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
-    button { padding: 8px 12px; cursor: pointer; }
+    button { padding: 8px 12px; cursor: pointer; margin-right:5px; }
     .container { display: flex; flex-wrap: wrap; }
     .note { background: #fff8a6; padding: 15px; margin: 10px; width: 200px; box-shadow: 2px 2px 5px gray; word-break: break-word; }
     @media (max-width: 600px) { .note { width: 100%; } }
@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<h1>📌 방명록 HTTPS 테스트</h1>
+<h1>📌 방명록 관리자 테스트</h1>
 
 <input id="name" placeholder="이름">
 <textarea id="message" placeholder="내용"></textarea>
@@ -24,81 +24,86 @@
 
 <div class="container" id="notes"></div>
 
-<!-- Firebase JS SDK 9 compat 버전 (defer 제거) -->
+<!-- Firebase JS SDK 9 compat -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // 🔥 Firebase 프로젝트 설정 (본인 프로젝트 값으로 변경)
   const firebaseConfig = {
     apiKey: "AIzaSyBnLBmTUdwYpORCVni_mko8cG4XN6HAaEs",
     authDomain: "memory-guest.firebaseapp.com",
     projectId: "memory-guest"
   };
 
-  // Firebase 초기화
   const app = firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  // 글 작성
-  function addNote() {
+  const adminPassword = "admin0710"; // 🔥 관리자 비밀번호 설정
+
+  let editId = null;
+
+  // 작성 / 수정
+  function addOrEditNote() {
     const name = document.getElementById("name").value.trim();
     const message = document.getElementById("message").value.trim();
     const password = document.getElementById("password").value.trim();
 
-    if (!name || !message || !password) {
-      alert("이름, 내용, 비밀번호 모두 입력하세요!");
-      return;
-    }
+    if (!name || !message || !password) { alert("이름, 내용, 비밀번호 모두 입력하세요!"); return; }
 
-    db.collection("notes").add({
-      name,
-      message,
-      password,
-      createdAt: new Date()
-    })
-    .then(() => {
-      alert("작성 완료!");
-      document.getElementById("name").value = "";
-      document.getElementById("message").value = "";
-      document.getElementById("password").value = "";
-    })
-    .catch(error => {
-      console.error(error);
-      alert("작성 중 오류 발생!");
-    });
+    if (editId) {
+      db.collection("notes").doc(editId).get().then(doc => {
+        if (doc.exists && (doc.data().password === password || password === adminPassword)) {
+          db.collection("notes").doc(editId).update({ name, message })
+            .then(() => { alert("수정 완료!"); resetForm(); })
+            .catch(error => console.error(error));
+        } else {
+          alert("비밀번호 틀림!");
+        }
+      });
+    } else {
+      db.collection("notes").add({ name, message, password, createdAt: new Date() })
+        .then(() => { alert("작성 완료!"); resetForm(); })
+        .catch(error => console.error(error));
+    }
+  }
+
+  function resetForm() {
+    document.getElementById("name").value = "";
+    document.getElementById("message").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("addBtn").textContent = "작성";
+    editId = null;
   }
 
   // 글 불러오기
   function loadNotes() {
-    db.collection("notes")
-      .orderBy("createdAt", "desc")
-      .onSnapshot(snapshot => {
-        const container = document.getElementById("notes");
-        container.innerHTML = "";
+    db.collection("notes").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+      const container = document.getElementById("notes");
+      container.innerHTML = "";
 
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const div = document.createElement("div");
-          div.className = "note";
-          div.innerHTML = `
-            <h3>${data.name}</h3>
-            <p>${data.message}</p>
-            <button onclick="deleteNote('${doc.id}')">삭제</button>
-          `;
-          container.appendChild(div);
-        });
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = `
+          <h3>${data.name}</h3>
+          <p>${data.message}</p>
+          <button onclick="deleteNote('${doc.id}')">삭제</button>
+          <button onclick="editNote('${doc.id}')">수정</button>
+        `;
+        container.appendChild(div);
       });
+    });
   }
 
-  // 글 삭제 (비밀번호 확인)
+  // 삭제
   window.deleteNote = function(id) {
-    const input = prompt("비밀번호 입력");
+    const input = prompt("비밀번호 입력 (관리자 가능)");
     if (!input) return;
 
     db.collection("notes").doc(id).get().then(doc => {
-      if (doc.exists && doc.data().password === input) {
+      if (doc.exists && (doc.data().password === input || input === adminPassword)) {
         db.collection("notes").doc(id).delete();
       } else {
         alert("비밀번호 틀림!");
@@ -106,10 +111,25 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // 버튼 이벤트 연결
-  document.getElementById("addBtn").addEventListener("click", addNote);
+  // 수정
+  window.editNote = function(id) {
+    const input = prompt("비밀번호 입력 (관리자 가능)");
+    if (!input) return;
 
-  // 초기 글 로드
+    db.collection("notes").doc(id).get().then(doc => {
+      if (doc.exists && (doc.data().password === input || input === adminPassword)) {
+        document.getElementById("name").value = doc.data().name;
+        document.getElementById("message").value = doc.data().message;
+        document.getElementById("password").value = input;
+        document.getElementById("addBtn").textContent = "수정 완료";
+        editId = id;
+      } else {
+        alert("비밀번호 틀림!");
+      }
+    });
+  }
+
+  document.getElementById("addBtn").addEventListener("click", addOrEditNote);
   loadNotes();
 });
 </script>
